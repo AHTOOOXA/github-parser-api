@@ -1,5 +1,6 @@
 # Note: no % operator
 # когда нибудь станет клауд функцией
+import os
 import traceback
 from datetime import datetime
 
