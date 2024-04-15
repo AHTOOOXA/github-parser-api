@@ -7,6 +7,7 @@ import traceback
 from datetime import datetime
 
 import psycopg2
+import psycopg2.extras
 import requests
 
 api_token = os.getenv("GITHUB_PAT")
@@ -51,6 +52,10 @@ def parse():
         "https://api.github.com/search/repositories", headers=headers, params=params, timeout=10,
     )
     data = response.json()
+
+    repos_data = []
+    authors_data = []
+    commits_data = []
     for pos, repository in enumerate(data["items"]):
         try:
             repo = repository["name"]
@@ -64,22 +69,7 @@ def parse():
             open_issues = repository["open_issues_count"]
             language = repository["language"]
             commits_url = repository["commits_url"][:-6]
-            cursor.execute("""
-                INSERT INTO repositories (repo, owner, position_cur, position_prev, stars, watchers, forks, open_issues, language)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (repo) DO UPDATE
-                SET
-                    position_prev = repositories.position_cur,
-                    position_cur = EXCLUDED.position_cur,
-                    stars = EXCLUDED.stars,
-                    watchers = EXCLUDED.watchers,
-                    forks = EXCLUDED.forks,
-                    open_issues = EXCLUDED.open_issues,
-                    language = EXCLUDED.language
-                RETURNING repo_id;
-            """, (repo, owner, position_cur, position_prev, stars, watchers, forks, open_issues, language))
-            repo_id = cursor.fetchone()
-            conn.commit()
+            repos_data.append((repo, owner, position_cur, position_prev, stars, watchers, forks, open_issues, language))
         except Exception as e:
             logger.error(e, pos, "repo")
         else:
@@ -89,6 +79,7 @@ def parse():
                 logger.error(e, commits_url)
             else:
                 commits_response = commit_response.json()
+                commits_repos_data = []
                 for commit in commits_response:
                     try:
                         sha = commit["sha"]
@@ -97,22 +88,43 @@ def parse():
                     except Exception:
                         logger.error(traceback.format_exc())
                     else:
-                        cursor.execute("""
-                        INSERT INTO authors (name)
-                        VALUES (%s)
-                        ON CONFLICT DO NOTHING
-                        """, (author, ))
-                        cursor.execute("""
-                            SELECT author_id FROM authors WHERE name = %s;
-                        """, (author, ))
-                        author_id = cursor.fetchone()
-                        cursor.execute("""
-                            INSERT INTO commits (sha, repo_id, author_id, date)
-                            VALUES (%s, %s, %s, %s)
-                            ON CONFLICT (sha) DO NOTHING
-                            RETURNING commit_id;
-                        """, (sha, repo_id[0], author_id[0], date))  # error
-                        conn.commit()
+                        authors_data.append((author,))
+                        commits_repos_data.append((sha, date, author))
+                commits_data.append(commits_repos_data)
+    psycopg2.extras.execute_values(cursor, """
+        INSERT INTO repositories (repo, owner, position_cur, position_prev, stars, watchers, forks, open_issues, language)
+        VALUES %s
+        ON CONFLICT (repo) DO UPDATE
+        SET
+            position_prev = repositories.position_cur,
+            position_cur = EXCLUDED.position_cur,
+            stars = EXCLUDED.stars,
+            watchers = EXCLUDED.watchers,
+            forks = EXCLUDED.forks,
+            open_issues = EXCLUDED.open_issues,
+            language = EXCLUDED.language
+        RETURNING repo_id;
+    """, repos_data)
+    repo_ids = cursor.fetchall()
+    psycopg2.extras.execute_values(cursor, """
+        INSERT INTO authors (name)
+        VALUES %s
+        ON CONFLICT (name) DO NOTHING
+    """, authors_data)
+
+    cursor.execute("SELECT * FROM authors")
+    authors = {author[1]: author[0] for author in cursor.fetchall()}
+
+    commits = [(sha, repo_id, authors[author], date)
+               for repo_id, repo_commits in zip(repo_ids, commits_data)
+               for sha, date, author in repo_commits]
+
+    psycopg2.extras.execute_values(cursor, """
+        INSERT INTO commits (sha, repo_id, author_id, date)
+        VALUES %s
+        ON CONFLICT DO NOTHING
+    """, commits)
+
     conn.commit()
     conn.close()
 

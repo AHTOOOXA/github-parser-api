@@ -22,8 +22,8 @@ class Database(metaclass=MetaSingleton):
     def __init__(self):
         self.conn = None  # type: psycopg2.connection
         self.cur = None  # type: psycopg2.cursor
-        self._create_connection()
         self.logger = logging.getLogger("uvicorn.error")
+        self._create_connection()
 
     def __del__(self):
         self._close_connection()
@@ -39,9 +39,9 @@ class Database(metaclass=MetaSingleton):
             )
             self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
             self.logger.info("DB INFO")
-            self.logger.info(self.conn.get_dsn_parameters(), "\n")
+            self.logger.info(self.conn.get_dsn_parameters())
         except (Exception, Error) as error:
-            self.logger.error("ERROR PostgreSQL connection", error)
+            self.logger.error(f"ERROR PostgreSQL connection {error}")
         finally:
             if self.conn:
                 self.logger.info("DB CONNECTION SUCCEEDED\n")
