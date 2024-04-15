@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
 
   app:
-    image: ghcr.io/${ACTOR}/github-parser:latest
+    image: ghcr.io/ahtoooxa/github-parser:latest
     container_name: app_docker
     env_file:
       - .env
