@@ -1,7 +1,7 @@
 import datetime
+from typing import Optional
 
 from pydantic import BaseModel
-from typing import Optional
 
 
 class Repository(BaseModel):

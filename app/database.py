@@ -1,10 +1,12 @@
 # REWRITE WITH ASYNCPG
 # REWRITE WITH ASYNCPG
 # REWRITE WITH ASYNCPG
+import logging
+import os
+
 import psycopg2
 import psycopg2.extras
 from psycopg2 import Error
-import os
 
 
 class MetaSingleton(type):
@@ -18,10 +20,10 @@ class MetaSingleton(type):
 
 class Database(metaclass=MetaSingleton):
     def __init__(self):
-        print("database init works")
         self.conn = None  # type: psycopg2.connection
         self.cur = None  # type: psycopg2.cursor
         self._create_connection()
+        self.logger = logging.getLogger("uvicorn.error")
 
     def __del__(self):
         self._close_connection()
@@ -36,20 +38,20 @@ class Database(metaclass=MetaSingleton):
                 port=os.getenv("DB_PORT"),
             )
             self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            print("DB INFO")
-            print(self.conn.get_dsn_parameters(), "\n")
+            self.logger.info("DB INFO")
+            self.logger.info(self.conn.get_dsn_parameters(), "\n")
         except (Exception, Error) as error:
-            print("ERROR PostgreSQL connection", error)
+            self.logger.error("ERROR PostgreSQL connection", error)
         finally:
             if self.conn:
-                print("DB CONNECTION SUCCEEDED\n")
+                self.logger.info("DB CONNECTION SUCCEEDED\n")
 
     def _close_connection(self):
         if self.conn:
             self.conn.commit()
             self.cur.close()
             self.conn.close()
-            print("DB CONNECTION CLOSED")
+            self.logger.info("DB CONNECTION CLOSED")
 
     def get_cur(self):
         return self.cur
