@@ -40,5 +40,5 @@ jobs:
       - run: echo "GITHUB_SHA=$GITHUB_SHA" >> .env
       - run: echo "${{ secrets.PRODUCTION_SSH_KEY }}" > ${{ env.SSH_KEY_PATH }} && chmod 600 ${{ env.SSH_KEY_PATH }}
       - run: scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} .env ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:github-api/.env
-      - run: scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} docker-compose.yml ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:github-api/docker-compose.yml
-      - run: ssh -i ${{ env.SSH_KEY_PATH }} ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd github-api && docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.PAT }} && docker pull ghcr.io/${ACTOR}/github-parser:latest && docker compose -f docker-compose.yml --env-file=.env up -d && docker system prune --all --force"
+      - run: scp -o StrictHostKeyChecking=no -i ${{ env.SSH_KEY_PATH }} docker-compose.yml ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }}:github-api/docker-compose.production.yml
+      - run: ssh -i ${{ env.SSH_KEY_PATH }} ${{ secrets.PRODUCTION_SSH_USERNAME }}@${{ secrets.PRODUCTION_SSH_HOST }} "cd github-api && docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.PAT }} && docker pull ghcr.io/${ACTOR}/github-parser:latest && docker compose -f docker-compose.production.yml --env-file=.env up -d && docker system prune --all --force"
