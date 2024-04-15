@@ -1,14 +1,11 @@
-from parser import parse
 import traceback
+from parser import parse
 
 
 def handler(event, context):
-    # repository_quantity = event["queryStringParameters"]["repository_quantity"]
-    # commit_quantity = event["queryStringParameters"]["commit_quantity"]
-
     try:
         parse()
-    except Exception as e:
+    except Exception:
         return {
             "statusCode": 500,
             "headers": {

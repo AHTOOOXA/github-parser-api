@@ -1,0 +1,23 @@
+name: Deploy to Yandex Cloud Function
+
+on:
+  workflow_run:
+    workflows: ["build and deploy"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Deploy to Yandex Cloud Function
+        uses: goodsmileduck/yandex-serverless-action@v1
+        with:
+          token: ${{ secrets.YC_TOKEN }}
+          function_id: '${{ secrets.YC_FUNC_ID }}'
+          runtime: 'python311'
+          memory: '256'
+          entrypoint: 'func.handler'
+          environment: DEBUG=True,COUNT=1,API_KEY=${{ secrets.PAT }},DB_HOST=${{ secrets.DB_HOST }},DB_PORT=${{ secrets.DB_PORT }},DB_NAME=${{ secrets.DB_NAME }},DB_USER=${{ secrets.DB_USER }},DB_PASS=${{ secrets.DB_PASS }}
+          source: './yandex-cloud-function/'
