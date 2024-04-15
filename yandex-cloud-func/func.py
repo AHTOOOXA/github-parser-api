@@ -1,4 +1,5 @@
 from parser import parse
+import traceback
 
 
 def handler(event, context):
@@ -14,7 +15,7 @@ def handler(event, context):
                 "Content-Type": "text/plain"
             },
             "isBase64Encoded": False,
-            "body": f"Failed to parse data from Github API, error: {e}"
+            "body": f"Failed to parse data from Github API, error: {traceback.format_exc()}"
         }
     else:
         return {
