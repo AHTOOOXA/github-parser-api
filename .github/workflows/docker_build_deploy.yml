@@ -23,9 +23,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Make envfile
         env:
-          secret_SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          secret_APP_HOST: ${{ secrets.APP_HOST }}
-          secret_MEDIA_UPLOAD_URL: ${{ secrets.MEDIA_UPLOAD_URL }}
           secret_DB_HOST: ${{ secrets.DB_HOST }}
           secret_DB_PORT: ${{ secrets.DB_PORT }}
           secret_DB_NAME: ${{ secrets.DB_NAME }}
