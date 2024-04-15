@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -19,7 +20,7 @@ async def top100(order_by: Optional[str] = None, db: Database = Depends(get_db))
 
 
 @router.get("/{owner}/{repo}/activity", response_model=List[RepositoryActivity])
-async def activity(owner: str, repo: str, db: Database = Depends(get_db)):
+async def activity(owner: str, repo: str, since: Optional[datetime] = None, until: Optional[datetime] = None, db: Database = Depends(get_db)):
     db.get_cur().execute(
         "SELECT repo_id FROM repositories WHERE owner = %s AND repo = %s", (owner, repo))
     repo_id = db.get_cur().fetchone()
@@ -34,8 +35,19 @@ async def activity(owner: str, repo: str, db: Database = Depends(get_db)):
         FROM commits
         JOIN authors ON commits.author_id = authors.author_id
         WHERE commits.repo_id = %s
-        GROUP BY commits.date
     """
-    db.get_cur().execute(query, repo_id)
+    params = [repo_id[0]]
+
+    if since:
+        query += " AND commits.date >= %s"
+        params.append(since)
+
+    if until:
+        query += " AND commits.date <= %s"
+        params.append(until)
+
+    query += " GROUP BY commits.date"
+
+    db.get_cur().execute(query, params)
     repos = db.get_cur().fetchall()
     return [dict(repo) for repo in repos]
