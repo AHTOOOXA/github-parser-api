@@ -1,5 +1,3 @@
-# Note: no % operator
-# когда нибудь станет клауд функцией
 # переписать уменьшив количество запросов к базе
 # сейчас их 1 + 100 * 100 * 2
 # работает вечность РЕАЛЬНО ВЕЧНОСТЬ
@@ -14,7 +12,24 @@ import requests
 api_token = os.getenv("GITHUB_PAT")
 
 
-def parse(repository_quantity: int = 100, commit_quantity: int = 100):
+def _get_db_connection():
+    try:
+        conn = psycopg2.connect(
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASS"),
+            host=os.getenv("DB_HOST"),
+            port=os.getenv("DB_PORT"),
+        )
+    except Exception as e:
+        logging.error(e)
+    else:
+        if conn:
+            return conn
+        raise Exception("Failed to connect to the database")
+
+
+def parse():
     headers = {
         "Authorization": "token %s" % api_token,
     }
@@ -28,13 +43,8 @@ def parse(repository_quantity: int = 100, commit_quantity: int = 100):
         "per_page": "100",
     }
     logger = logging.getLogger()
-    conn = psycopg2.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT"),
-    )
+
+    conn = _get_db_connection()
     cursor = conn.cursor()
 
     response = requests.get(
@@ -78,8 +88,6 @@ def parse(repository_quantity: int = 100, commit_quantity: int = 100):
             except Exception as e:
                 logger.error(e, commits_url)
             else:
-                # with open("data-comm.json", "w") as f:
-                #     f.write(commit_response.text)
                 commits_response = commit_response.json()
                 for commit in commits_response:
                     try:
@@ -88,8 +96,6 @@ def parse(repository_quantity: int = 100, commit_quantity: int = 100):
                         author = commit["commit"]["author"]["name"].replace("'", "''")
                     except Exception:
                         logger.error(traceback.format_exc())
-                        # with open("error.json", "a") as f:
-                        #     f.write(str(commit))
                     else:
                         cursor.execute("""
                         INSERT INTO authors (name)
@@ -107,3 +113,6 @@ def parse(repository_quantity: int = 100, commit_quantity: int = 100):
                             RETURNING commit_id;
                         """, (sha, repo_id[0], author_id[0], date))  # error
                         conn.commit()
+    conn.commit()
+    conn.close()
+
