@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - run: docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.GITHUB_PAT }}
+      - run: docker login ghcr.io -u $GITHUB_ACTOR -p ${{ secrets.PAT }}
       - run: docker build -t ghcr.io/$GITHUB_ACTOR/github-parser:latest .
       - run: docker image push ghcr.io/$GITHUB_ACTOR/github-parser:latest
   deploy:
