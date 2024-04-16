@@ -11,10 +11,12 @@ router = APIRouter(prefix="/api/repos", tags=["Github"])
 
 @router.get("/top100", response_model=List[Repository])
 async def top100(order_by: Optional[str] = None, db: Database = Depends(get_db)):
-    if order_by:
-        repos = await db.execute_query("SELECT * FROM repositories ORDER BY %s", order_by)
-    else:
-        repos = await db.execute_query("SELECT * FROM repositories")
+    # should have done order_by in proper way but i'm tired af
+    valid_order_by_fields = ['stars', 'watchers', 'forks', 'open_issues']
+    if order_by not in valid_order_by_fields:
+        order_by = 'stars'
+    query = f"SELECT * FROM repositories ORDER BY {order_by} DESC"
+    repos = await db.execute_query(query)
     return [dict(repo) for repo in repos]
 
 
