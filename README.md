@@ -40,13 +40,16 @@ CREATE TABLE IF NOT EXISTS activity_authors (
 ### FastAPI App and database
 Autodeploy is done via Github Actions (взял за основу деплой vas3k.club). Fork the repo and fill the secrets with your data and you are ready to go (could be done with gitempty commit)
 
-BE AWARE: app's docker image name is currently hardcoded in docker-compose.production.yml
+***BE AWARE***: первый раз нужно вручную запустить initial_setup.sql в db_docker (надо в гитхаб экшн бы добавить но я уже засыпаю)
+
+***BE AWARE***: app's docker image name is currently hardcoded in docker-compose.production.yml
 
 Simple and dumb way to deploy
 - fill the .env with your data
 - ssh to your VDS
 - clone the repo
 - docker compose -f docker-compose.yml build && docker -f docker-compose.yml compose up
+- выполнить initial_setup.sql в db_docker
 - Congrats! API is available at YOUR-HOST:7777/docs
 ### Yandex cloud function
 Установить Yandex CLI и выполнить действия аналогично инструкции
