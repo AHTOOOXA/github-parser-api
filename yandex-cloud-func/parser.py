@@ -1,6 +1,3 @@
-# переписать уменьшив количество запросов к базе
-# сейчас их 1 + 100 * 100 * 2
-# работает вечность РЕАЛЬНО ВЕЧНОСТЬ
 import logging
 import os
 import traceback
@@ -127,4 +124,3 @@ def parse():
 
     conn.commit()
     conn.close()
-
