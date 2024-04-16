@@ -1,12 +1,8 @@
-# REWRITE WITH ASYNCPG
-# REWRITE WITH ASYNCPG
-# REWRITE WITH ASYNCPG
 import logging
 import os
 
-import psycopg2
-import psycopg2.extras
-from psycopg2 import Error
+import asyncpg
+from asyncpg import exceptions
 
 
 class MetaSingleton(type):
@@ -20,42 +16,53 @@ class MetaSingleton(type):
 
 class Database(metaclass=MetaSingleton):
     def __init__(self):
-        self.conn = None  # type: psycopg2.connection
-        self.cur = None  # type: psycopg2.cursor
-        self.logger = logging.getLogger("uvicorn.error")
-        self._create_connection()
+        self.pool = None  # type: asyncpg.pool.Pool
+        self.logger = logging.getLogger("uvicorn.error")  # logger isn't async
 
-    def __del__(self):
-        self._close_connection()
+    @classmethod
+    async def create(cls):
+        self = Database()
+        await self._create_connection()
+        return self
 
-    def _create_connection(self):
+    async def __aenter__(self):
+        self.pool = await self._create_connection()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self._close_connection()
+
+    async def _create_connection(self):
         try:
-            self.conn = psycopg2.connect(
-                dbname=os.getenv("DB_NAME"),
+            pool = await asyncpg.create_pool(
+                database=os.getenv("DB_NAME"),
                 user=os.getenv("DB_USER"),
                 password=os.getenv("DB_PASS"),
                 host=os.getenv("DB_HOST"),
                 port=os.getenv("DB_PORT"),
             )
-            self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
             self.logger.info("DB INFO")
-            self.logger.info(self.conn.get_dsn_parameters())
-        except (Exception, Error) as error:
+            self.logger.info(pool)
+        except (Exception, exceptions.InterfaceError) as error:
             self.logger.error(f"ERROR PostgreSQL connection {error}")
-        finally:
-            if self.conn:
+        else:
+            if pool:
                 self.logger.info("DB CONNECTION SUCCEEDED\n")
+                return pool
 
-    def _close_connection(self):
-        if self.conn:
-            self.conn.commit()
-            self.cur.close()
-            self.conn.close()
+    async def _close_connection(self):
+        if self.pool:
+            await self.pool.close()
             self.logger.info("DB CONNECTION CLOSED")
 
-    def get_cur(self):
-        return self.cur
+    async def get_conn(self):
+        return await self.pool.acquire()
+
+    async def execute_query(self, query, *args):
+        async with self.pool.acquire() as connection:
+            return await connection.fetch(query, *args)
 
 
-def get_db() -> Database:
-    return Database()
+async def get_db():
+    async with Database() as db:
+        yield db

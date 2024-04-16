@@ -4,3 +4,5 @@ requests~=2.31.0
 uvicorn
 gunicorn
 psycopg2-binary
+asyncpg~=0.29.0
+psycopg2~=2.9.9

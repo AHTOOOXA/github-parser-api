@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .database import Database
 from .routers import github
 
 app = FastAPI()
@@ -18,6 +19,11 @@ app.add_middleware(
 app.include_router(github.router)
 
 
+@app.on_event("startup")
+async def startup():
+    db = await Database.create()
+
+
 @app.get("/")
-def root():
+async def root():
     return {"message": "Hello world!"}
