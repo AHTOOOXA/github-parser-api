@@ -1,10 +1,10 @@
+import logging
 import os
+from typing import List
+
 import psycopg2
 import psycopg2.extras
-import logging
-
-from typing import List
-from models import Repository, Author, Commit
+from models import Author, Commit, Repository
 
 
 class Database:

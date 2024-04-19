@@ -26,22 +26,18 @@ class GithubService:
                 ARRAY_AGG(DISTINCT authors.name) AS authors
             FROM commits
             JOIN authors ON commits.author_id = authors.author_id
-            WHERE commits.repo_id = $1
+            WHERE commits.repo_id = (
+                SELECT repo_id FROM repositories WHERE owner = $1 AND repo = $2
+            )
         """
-        repo_id_record = await self.repository_db.execute_query(
-            "SELECT repo_id FROM repositories WHERE owner = $1 AND repo = $2", params.owner, params.repo)
-        if not repo_id_record:
-            return []
-        repo_id = repo_id_record[0]["repo_id"]
-        query += " AND commits.repo_id = $1"
-        db_params = [repo_id]
+        db_params = [params.owner, params.repo]
 
         if params.since:
-            query += " AND commits.date >= $2"
+            query += " AND commits.date >= $3"
             db_params.append(params.since)
 
         if params.until:
-            query += " AND commits.date <= $3"
+            query += " AND commits.date <= $4"
             db_params.append(params.until)
 
         query += " GROUP BY commits.date"
