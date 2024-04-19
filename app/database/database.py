@@ -48,7 +48,7 @@ class Database(metaclass=MetaSingleton):
         else:
             if pool:
                 self.logger.info("DB CONNECTION SUCCEEDED\n")
-                return pool
+                self.pool = pool
 
     async def _close_connection(self):
         if self.pool:
