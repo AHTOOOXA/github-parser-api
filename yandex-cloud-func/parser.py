@@ -1,12 +1,10 @@
-import logging
-from github_api import GithubAPI
 from database import Database
+from github_api import GithubAPI
 
 
 def parse():
     db = Database()
     github_api = GithubAPI()
-    logger = logging.getLogger()
 
     params = {
         "q": "stars:>1",
@@ -33,6 +31,3 @@ def parse():
     for commit in commits:
         commit.author_id = author_id_dict[commit.author_name]
     db.insert_commits(commits)
-
-
-parse()

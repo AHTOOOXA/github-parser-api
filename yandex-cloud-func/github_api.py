@@ -1,8 +1,8 @@
 import os
 from datetime import datetime
-from models import Repository, Author, Commit
 
 import requests
+from models import Author, Commit, Repository
 
 
 class GithubAPI:
