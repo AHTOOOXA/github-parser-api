@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database.database import Database
-# from app.api.routers import api_routers
 from app.api.routers import api_routers
+from app.database.database import Database
 
 app = FastAPI(
     title="API for Github parser",
@@ -25,7 +24,7 @@ for router in api_routers:
 
 @app.on_event("startup")
 async def startup():
-    db = await Database.create()
+    await Database.create()
 
 
 @app.get("/")

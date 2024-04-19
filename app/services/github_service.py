@@ -1,18 +1,20 @@
-import logging
 from typing import List
-from app.schemas.github_schemas import Repository, RepositoryActivity, Ordering, RepositoryActivityFilter
-from fastapi import Depends
-from app.database.database import Database, get_db
+
+from app.database.database import Database
+from app.schemas.github_schemas import (
+    Ordering,
+    Repository,
+    RepositoryActivity,
+    RepositoryActivityFilter,
+)
 
 
 class GithubService:
     def __init__(self, repository_db: Database):
         self.repository_db = repository_db
-        print(type(self.repository_db))
 
     async def get_top100_repositories(self, ordering: Ordering) -> List[Repository]:
-        print(type(self.repository_db))
-        query = f"SELECT * FROM repositories ORDER BY {ordering.order_by} DESC"
+        query = f"SELECT * FROM repositories ORDER BY {ordering.order_by.value} DESC"
         repos_raw = await self.repository_db.execute_query(query)
         return [Repository(**repo) for repo in repos_raw]
 
